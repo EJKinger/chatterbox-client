@@ -22,7 +22,7 @@
 
 $(document).ready(function(){
 
-  var getData = function(){
+  var getData = function(roomName){
     return $.ajax({
       url: "https://api.parse.com/1/classes/chatterbox",
       type: 'GET',
@@ -31,7 +31,17 @@ $(document).ready(function(){
         getRooms(data);
         $('.messages').empty();
         for (var i = 0; i < data.results.length; i++) {
-          $('.messages').append("<div class='message'>" + _.escape(data.results[i].text) + "</div>");
+          if (roomName !== undefined){
+            if (data.results[i].roomname === roomName){
+              $('.messages').append("<div class='message'>" + _.escape(data.results[i].text) + "</div>");
+            }
+          }
+          //if it gets the roomname from the on change room dropdown funciton
+            //only display messages from that room
+          //else display all messages
+          else{
+            $('.messages').append("<div class='message'>" + _.escape(data.results[i].text) + "</div>");
+          }
         }
       },
 
@@ -72,24 +82,28 @@ $(document).ready(function(){
 
     };
 
-
-
-
-
-
   getData();
   // setInterval(getData, 15000);
-
+    //if user is in chat room, refresh room and not all messages
 
 
   $('.button').on('click', function(e){
     var message = {};
     message.text = $('.userInput').val();
     message.username = window.decodeURIComponent(window.location.search).split('=')[1];
-    message.roomname = 'test';
+    message.roomname = $('.roomsList option:selected').text();
+      //if user selected room from dropdown, use it
 
     postMessage(message);
   });
+
+  // SELECT FIELD LISTENER
+  $('.roomsList').on('change', function(e){
+    var room = $('.roomsList option:selected').text();
+    // render messages from selected room
+    getData(room);
+  });
+
 
 //On page refresh
   //
