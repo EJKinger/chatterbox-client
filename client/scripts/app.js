@@ -21,6 +21,7 @@
 // });
 
 $(document).ready(function(){
+  var friends = [];
 
   var getData = function(roomName){
     return $.ajax({
@@ -31,18 +32,27 @@ $(document).ready(function(){
         getRooms(data);
         $('.messages').empty();
         for (var i = 0; i < data.results.length; i++) {
-          if (roomName !== undefined){
+          if (roomName !== undefined && roomName !== 'Select All'){
             if (data.results[i].roomname === roomName){
-              $('.messages').append("<div class='message'>" + _.escape(data.results[i].text) + "</div>");
+              //add username line
+              $('.messages').append("<div class='message'>" +
+                                      "<p><a class='userNameLink' href='#'>" + _.escape(data.results[i].username) + "</a></p>" +
+                                      "<p class='" + _.escape(data.results[i].username) + "'>" + _.escape(data.results[i].text) +     "</p>" +
+                                    "</div>");
             }
           }
           //if it gets the roomname from the on change room dropdown funciton
             //only display messages from that room
           //else display all messages
-          else{
-            $('.messages').append("<div class='message'>" + _.escape(data.results[i].text) + "</div>");
+          else {
+            $('.messages').append("<div class='message'>" +
+                                      "<p><a class='userNameLink' href='#'>" + _.escape(data.results[i].username) + "</a></p>" +
+                                      "<p class='" + _.escape(data.results[i].username) + "'>" + _.escape(data.results[i].text) +     "</p>" +
+                                  "</div>");
+            //$('.messages').append("<div class='message'>" + _.escape(data.results[i].text) + "</div>");
           }
         }
+        afterPageLoads();
       },
 
       error: function(data) {
@@ -58,7 +68,10 @@ $(document).ready(function(){
       data: JSON.stringify(message),
       contentType: 'application/json',
       success: function(data) {
-        console.log(data);
+        //clear message and room input fields
+        $('.userInput').val('');
+        $('.newRoomName').val('');
+        getData(message.roomname);
       },
       error: function(data) {
         console.log(data);
@@ -87,12 +100,31 @@ $(document).ready(function(){
     //if user is in chat room, refresh room and not all messages
 
 
+    var afterPageLoads = function() {
+      for (var i = 0; i < friends.length; i++){
+        $("." + friends[i]).css('font-weight', 'bold');
+      }
+    };
+
+
+
+    //   friends.forEach(funciton(item){
+    //     $(item).css('font-weight', 'bold'));
+    //   };
+    // };
+
+
+
   $('.button').on('click', function(e){
     var message = {};
     message.text = $('.userInput').val();
     message.username = window.decodeURIComponent(window.location.search).split('=')[1];
-    message.roomname = $('.roomsList option:selected').text();
+    if ($('.newRoomName').val() === ''){
       //if user selected room from dropdown, use it
+      message.roomname = $('.roomsList option:selected').text();
+    } else {
+      message.roomname = $('.newRoomName').val();
+    }
 
     postMessage(message);
   });
@@ -100,8 +132,22 @@ $(document).ready(function(){
   // SELECT FIELD LISTENER
   $('.roomsList').on('change', function(e){
     var room = $('.roomsList option:selected').text();
-    // render messages from selected room
+    if (room === 'New Room') {
+      $('.newRoom').toggle();
+    } else {
+      $('.newRoom').css({display: 'none'});
+    }
+
+    // RENDER MESSAGES FROM SELECTED ROOM
     getData(room);
+  });
+
+  $('body').on('click', '.userNameLink', function(e){
+    console.log(this.innerText);
+    //console.log(this.val());
+    friends.push(this.innerText);
+    console.log(friends);
+    afterPageLoads();
   });
 
 
