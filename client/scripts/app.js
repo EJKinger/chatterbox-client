@@ -1,28 +1,10 @@
-// YOUR CODE HERE:
-// https://api.parse.com/1/classes/chatterbox
-// var message = {
-//   username: 'shawndrost',
-//   text: 'trololo',
-//   roomname: '4chan'
-// };
-// $.ajax({
-//   // This is the url you should use to communicate with the parse API server.
-//   url: 'https://api.parse.com/1/classes/chatterbox',
-//   type: 'POST',
-//   data: JSON.stringify(message),
-//   contentType: 'application/json',
-//   success: function (data) {
-//     console.log('chatterbox: Message sent');
-//   },
-//   error: function (data) {
-//     // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
-//     console.error('chatterbox: Failed to send message');
-//   }
-// });
-
 $(document).ready(function(){
+  // GLOBAL VARIABLE TO PERSIST FRIENDS
   var friends = [];
 
+  /*
+    DATABASE INTERACTION FUNCTIONS
+  */
   var getData = function(roomName){
     return $.ajax({
       url: "https://api.parse.com/1/classes/chatterbox",
@@ -30,29 +12,8 @@ $(document).ready(function(){
       contentType: 'application/json',
       success: function(data) {
         getRooms(data);
-        $('.messages').empty();
-        for (var i = 0; i < data.results.length; i++) {
-          if (roomName !== undefined && roomName !== 'Select All'){
-            if (data.results[i].roomname === roomName){
-              //add username line
-              $('.messages').append("<div class='message'>" +
-                                      "<p><a class='userNameLink' href='#'>" + _.escape(data.results[i].username) + "</a></p>" +
-                                      "<p class='" + _.escape(data.results[i].username) + "'>" + _.escape(data.results[i].text) +     "</p>" +
-                                    "</div>");
-            }
-          }
-          //if it gets the roomname from the on change room dropdown funciton
-            //only display messages from that room
-          //else display all messages
-          else {
-            $('.messages').append("<div class='message'>" +
-                                      "<p><a class='userNameLink' href='#'>" + _.escape(data.results[i].username) + "</a></p>" +
-                                      "<p class='" + _.escape(data.results[i].username) + "'>" + _.escape(data.results[i].text) +     "</p>" +
-                                  "</div>");
-            //$('.messages').append("<div class='message'>" + _.escape(data.results[i].text) + "</div>");
-          }
-        }
-        afterPageLoads();
+        insertMessages(data, roomName);
+        boldFriendsMessages();
       },
 
       error: function(data) {
@@ -75,46 +36,63 @@ $(document).ready(function(){
       },
       error: function(data) {
         console.log(data);
+        alert('ERROR: Message Not Sent');
       }
     });
   };
 
 
-  //getRooms(data)
-    //build array of all rooms
-    //put those into html
-    var getRooms = function(data){
-      var rooms = [];
-      for (var i = 0; i < data.results.length; i++){
-        rooms.push(data.results[i].roomname);
+  /*
+    HELPERS
+  */
+  // WRITE DATA TO THE DOM
+  var insertMessages = function(data, roomName) {
+    // CLEAR MESSAGE AREA
+    $('.messages').empty();
+    for (var i = 0; i < data.results.length; i++) {
+      // IF A ROOM IS SELECTED, WRITE TO THAT ROOM
+      if (roomName !== undefined && roomName !== 'Select All'){
+        if (data.results[i].roomname === roomName){
+          $('.messages').append("<div class='message'>" +
+                                  "<p><a class='userNameLink' href='#'>" + _.escape(data.results[i].username) + "</a></p>" +
+                                  "<p class='" + _.escape(data.results[i].username) + "'>" + _.escape(data.results[i].text) +     "</p>" +
+                                "</div>");
+        }
       }
-      rooms = _.uniq(rooms);
-      rooms.forEach(function(item){
-        $('.roomsList').append("<option>" + item + "</option>");
-      });
-
-    };
-
-  getData();
-  // setInterval(getData, 15000);
-    //if user is in chat room, refresh room and not all messages
-
-
-    var afterPageLoads = function() {
-      for (var i = 0; i < friends.length; i++){
-        $("." + friends[i]).css('font-weight', 'bold');
+      // IF ROOM WAS NOT CHOSEN, SHOW ALL MESSAGES
+      else {
+        $('.messages').append("<div class='message'>" +
+                                  "<p><a class='userNameLink' href='#'>" + _.escape(data.results[i].username) + "</a></p>" +
+                                  "<p class='" + _.escape(data.results[i].username) + "'>" + _.escape(data.results[i].text) +     "</p>" +
+                              "</div>");
       }
-    };
+    }
+  };
+
+  // ADDS ROOMS TO DROP-DOWN LIST
+  var getRooms = function(data){
+    var rooms = [];
+    for (var i = 0; i < data.results.length; i++){
+      rooms.push(_.escape(data.results[i].roomname));
+    }
+    rooms = _.uniq(rooms);
+    rooms.forEach(function(item){
+      $('.roomsList').append("<option>" + item + "</option>");
+    });
+  };
+
+  // DISPLAYS FRIENDS' MESSAGES IN BOLD
+  var boldFriendsMessages = function() {
+    for (var i = 0; i < friends.length; i++){
+      $("." + friends[i]).css('font-weight', 'bold');
+    }
+  };
 
 
-
-    //   friends.forEach(funciton(item){
-    //     $(item).css('font-weight', 'bold'));
-    //   };
-    // };
-
-
-
+  /*
+    EVENT LISTENERS
+  */
+  // LISTENS FOR SUBMIT BUTTON CLICK
   $('.button').on('click', function(e){
     var message = {};
     message.text = $('.userInput').val();
@@ -125,11 +103,10 @@ $(document).ready(function(){
     } else {
       message.roomname = $('.newRoomName').val();
     }
-
     postMessage(message);
   });
 
-  // SELECT FIELD LISTENER
+  // LISTENS FOR CHANGE IN DROP-DOWN MENU (ROOMS)
   $('.roomsList').on('change', function(e){
     var room = $('.roomsList option:selected').text();
     if (room === 'New Room') {
@@ -137,27 +114,18 @@ $(document).ready(function(){
     } else {
       $('.newRoom').css({display: 'none'});
     }
-
     // RENDER MESSAGES FROM SELECTED ROOM
     getData(room);
   });
 
+  // ADDS TO FRIENDS ARRAY, BOLDENS FRIENDS' MESSAGES
   $('body').on('click', '.userNameLink', function(e){
-    console.log(this.innerText);
-    //console.log(this.val());
     friends.push(this.innerText);
-    console.log(friends);
-    afterPageLoads();
+    boldFriendsMessages();
   });
 
 
-//On page refresh
-  //
-
-//Create dropdown field of available rooms
-  //selecting a roomname
-    //updates roomname property of message
-
-
+  // START RENDERING TO PAGE
+  getData();
 });
 
