@@ -22,15 +22,14 @@
 
 $(document).ready(function(){
 
-  var getMessages = function(){
+  var getData = function(){
     return $.ajax({
       url: "https://api.parse.com/1/classes/chatterbox",
       type: 'GET',
       contentType: 'application/json',
       success: function(data) {
-        console.log(data);
+        getRooms(data);
         $('.messages').empty();
-        console.log('Request Made!!');
         for (var i = 0; i < data.results.length; i++) {
           $('.messages').append("<div class='message'>" + _.escape(data.results[i].text) + "</div>");
         }
@@ -57,10 +56,30 @@ $(document).ready(function(){
     });
   };
 
-  getMessages();
-  // setInterval(getMessages, 15000);
 
-  // SELECT USER NAME AND SEND MESSAGE
+  //getRooms(data)
+    //build array of all rooms
+    //put those into html
+    var getRooms = function(data){
+      var rooms = [];
+      for (var i = 0; i < data.results.length; i++){
+        rooms.push(data.results[i].roomname);
+      }
+      rooms = _.uniq(rooms);
+      rooms.forEach(function(item){
+        $('.roomsList').append("<option>" + item + "</option>");
+      });
+
+    };
+
+
+
+
+
+
+  getData();
+  // setInterval(getData, 15000);
+
 
 
   $('.button').on('click', function(e){
@@ -72,15 +91,13 @@ $(document).ready(function(){
     postMessage(message);
   });
 
+//On page refresh
+  //
+
+//Create dropdown field of available rooms
+  //selecting a roomname
+    //updates roomname property of message
+
+
 });
-
-// need a data (form) field, with a submit button
-
-// put request in a function to invoke later (ie click)
-  // function will:
-  // get user name
-  // get text
-  // get room name (?)
-  // format above data, make POST request
-  // console.log code
 
